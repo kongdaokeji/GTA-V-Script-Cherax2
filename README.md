@@ -30,9 +30,11 @@ Mission/
     ├── manager.lua                # 玻璃主题、背景扫描、鼠标规则
     └── assets/                    # cursor.png、cursor_glass.png、official_qq_group.png
 docs/
-└── api/                           # 开发辅助 API 类型/函数声明，不参与运行时加载
-    ├── Cherax API.lua             # Cherax Lua API / 类型声明
-    └── ImGui.lua                  # Cherax ImGui API / 类型声明
+├── api/                           # 开发辅助 API 类型/函数声明，不参与运行时加载
+│   ├── Cherax API.lua             # Cherax Lua API / 类型声明
+│   └── ImGui.lua                  # Cherax ImGui API / 类型声明
+└── examples/
+    └── example.lua                # Cherax Lua 示例脚本（FeatureMgr / 回调 / 玩家功能）
 ```
 
 ## 页面
@@ -53,6 +55,7 @@ docs/
 
 - `Cherax API.lua`：Cherax 平台 API、类、枚举及相关 LuaLS 注解。
 - `ImGui.lua`：Cherax ImGui 绘制接口、控件、Flags 与相关 LuaLS 注解。
+- `docs/examples/example.lua`：Cherax Lua 完整示例脚本（FeatureMgr 功能注册、回调触发器、玩家功能），演示平台 API 用法，独立加载运行，不属于 Mission Assistant 的运行时模块。
 
 这两个文件用于代码补全、类型提示和 API 查询，不属于 Mission Assistant 的运行时模块，也不需要由 `Mission_Loader.lua` 加载。更新 Cherax/ImGui API 定义时，可直接替换对应文件。
 
