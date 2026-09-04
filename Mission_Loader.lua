@@ -2,7 +2,6 @@
 -- 正式模块使用 require()，并通过 Init(MissionApp) 显式注入共享应用状态。
 
 local LOADER_NAME = "Mission Assistant Loader"
-local APP_VERSION = "1.3"
 local ARCHITECTURE_VERSION = 14
 local PROBE_MODULE = "Mission.lib.probe"
 
@@ -64,7 +63,6 @@ end
 -- 所有后续模块只通过该命名空间共享数据和接口，避免增加零散全局变量。
 MissionApp = {
     Name = "Mission Assistant",
-    Version = APP_VERSION,
     ArchitectureVersion = ARCHITECTURE_VERSION,
     Generation = previous_generation + 1,
 

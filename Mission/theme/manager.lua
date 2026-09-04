@@ -245,7 +245,6 @@ function Manager.RefreshBackgrounds()
         local lower=name:lower()
         if lower=="cursor.png"
             or lower=="cursor_glass.png"
-            or lower=="official_qq_group.png"
             or not supported_images[extension(name)]
         then
             return false

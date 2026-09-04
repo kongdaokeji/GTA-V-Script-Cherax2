@@ -2,7 +2,6 @@
 
 Cherax Lua 平台的 GTA Online 任务辅助菜单：模块化结构 + 自绘 UI，启动后直接进入主界面。
 
-- 产品版本：1.3
 - 应用模块：46 个
 - 显示/隐藏热键：默认 PageDown，可在主题设置中重绑定
 
@@ -18,7 +17,7 @@ Mission/
 ├── lib/
 │   ├── probe.lua                  # require 与共享 MissionApp 校验
 │   ├── runtime.lua                # 唯一 ON_PRESENT：热键、鼠标捕获、游戏输入屏蔽
-│   ├── mainwindow.lua             # 自绘主窗口：导航、拖动/缩放、官方Q群入口
+│   ├── mainwindow.lua             # 自绘主窗口：导航、拖动/缩放
 │   ├── data/                      # 业务数据、地址、UI 状态（11 个）
 │   ├── actions/                   # 游戏数据读写与 Native 操作（11 个）
 │   ├── gui/
@@ -28,7 +27,7 @@ Mission/
 └── theme/
     ├── default.lua                # 经典深紫基础主题
     ├── manager.lua                # 玻璃主题、背景扫描、鼠标规则
-    └── assets/                    # cursor.png、cursor_glass.png、official_qq_group.png
+    └── assets/                    # cursor.png、cursor_glass.png
 docs/
 ├── api/                           # 开发辅助 API 类型/函数声明，不参与运行时加载
 │   ├── Cherax API.lua             # Cherax Lua API / 类型声明
@@ -64,4 +63,3 @@ docs/
 - 经典 / 玻璃两套界面，玻璃含浅色/深色遮罩与透明度控制。
 - 显示/隐藏热键可在主题设置中重绑定，默认 PageDown。
 - 自定义背景图可选放入 `Mission/theme/backgrounds/`，在主题设置中刷新。
-- 主窗口底部有“官方Q群”入口，弹窗展示二维码，可复制链接与群号。
