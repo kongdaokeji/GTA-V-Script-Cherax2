@@ -253,7 +253,7 @@ function Core.NavigationIcon(id, x, y, size, color_name, accent_name)
     end
 end
 
-function Core.SidebarItem(item, selected, x, y, width, height, hovered, active, icon_only)
+function Core.SidebarItem(item, selected, x, y, width, height, hovered, active)
     local pressed_offset = active and 1 or 0
 
     if selected then
@@ -270,18 +270,14 @@ function Core.SidebarItem(item, selected, x, y, width, height, hovered, active, 
     local icon_accent = selected and "NavIconActive"
         or hovered and "NavIconHover"
         or "NavIconAccent"
-    local icon_size = height < 30 and 14 or (icon_only and 20 or 18)
+    local icon_size = height < 30 and 14 or 18
     local row_center = y + height * 0.5 + pressed_offset
-    local icon_x = icon_only and (x + math.floor((width - icon_size) * 0.5)) or (x + 15)
+    local icon_x = x + 15
     local icon_y = math.floor(row_center - icon_size * 0.5)
 
     Core.NavigationIcon(item.Id, icon_x, icon_y, icon_size, text_color, icon_accent)
-    if not icon_only then
-        Core.Text(x + 50, math.floor(row_center - ImGui.GetTextLineHeight() * 0.5),
-            item.Label, text_color)
-    elseif hovered then
-        Core.Tooltip(item.Label)
-    end
+    Core.Text(x + 50, math.floor(row_center - ImGui.GetTextLineHeight() * 0.5),
+        item.Label, text_color)
 end
 
 function Core.Panel(x, y, width, height, title)

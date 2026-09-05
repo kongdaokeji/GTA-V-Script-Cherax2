@@ -419,8 +419,7 @@ local function draw_sidebar(layout, states)
             layout.ItemWidth,
             state.Height,
             state.Hovered,
-            state.Active,
-            false
+            state.Active
         )
     end
 end
