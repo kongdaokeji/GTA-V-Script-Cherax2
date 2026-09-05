@@ -14,6 +14,9 @@ end
 
 function Router.GetCurrentPage()
     local state = App.Data.State.Ui
+    if state.SelectedPage == "settings" then
+        return { Id = "settings", Label = "设置" }
+    end
     return App.Data.GetNavigationItem(state.SelectedPage)
 end
 
@@ -39,8 +42,8 @@ function Router.Draw(x, y, width, height)
         App.Gui.Pages.Solo.Draw(page, x, y, width, height)
     elseif page.Id == "asset" then
         App.Gui.Pages.Asset.Draw(page, x, y, width, height)
-    elseif page.Id == "theme" then
-        App.Gui.Pages.Theme.Draw(page, x, y, width, height)
+    elseif page.Id == "settings" then
+        App.Gui.Pages.Settings.Draw(page, x, y, width, height)
     else
         App.Data.State.Ui.SelectedPage = "perico"
         App.Gui.Pages.Perico.Draw(App.Data.GetNavigationItem("perico"), x, y, width, height)

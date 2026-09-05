@@ -90,6 +90,7 @@ function DefaultTheme.Init(App)
         },
 
         Metrics = {
+            FontScale = 1.15,
             HeaderHeight = 70,
             SidebarWidth = 220,
             SidebarMinWidth = 200,

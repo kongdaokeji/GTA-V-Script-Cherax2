@@ -5,7 +5,7 @@ local LOADER_NAME = "Mission Assistant Loader"
 local ARCHITECTURE_VERSION = 14
 local PROBE_MODULE = "Mission.lib.probe"
 
--- 最终阶段：九个任务页面完成，并接入主题设置。
+-- 最终阶段：十个任务页面完成，并接入显示/隐藏热键设置。
 local APPLICATION_MODULES = {
     { Path = "Mission.lib.data.state",       Name = "Data.State" },
     { Path = "Mission.lib.data.perico",      Name = "Data.Perico" },
@@ -19,7 +19,7 @@ local APPLICATION_MODULES = {
     { Path = "Mission.lib.data.solo",        Name = "Data.Solo" },
     { Path = "Mission.lib.data.asset",       Name = "Data.Asset" },
     { Path = "Mission.theme.default",        Name = "Theme.Default" },
-    { Path = "Mission.theme.manager",        Name = "Theme.Manager" },
+    { Path = "Mission.lib.hotkey",           Name = "Hotkey" },
     { Path = "Mission.lib.widgets.core",     Name = "Widgets.Core" },
     { Path = "Mission.lib.widgets.layout",   Name = "Widgets.Layout" },
     { Path = "Mission.lib.widgets.button",   Name = "Widgets.Button" },
@@ -49,7 +49,7 @@ local APPLICATION_MODULES = {
     { Path = "Mission.lib.gui.pages.quick",  Name = "Gui.Pages.Quick" },
     { Path = "Mission.lib.gui.pages.solo",   Name = "Gui.Pages.Solo" },
     { Path = "Mission.lib.gui.pages.asset",  Name = "Gui.Pages.Asset" },
-    { Path = "Mission.lib.gui.pages.theme",  Name = "Gui.Pages.Theme" },
+    { Path = "Mission.lib.gui.pages.settings", Name = "Gui.Pages.Settings" },
     { Path = "Mission.lib.gui.router",       Name = "Gui.Router" },
     { Path = "Mission.lib.mainwindow",       Name = "Gui.MainWindow" },
     { Path = "Mission.lib.runtime",          Name = "Runtime" }
@@ -457,7 +457,7 @@ else
                 App.Runtime.ApplicationReady = true
                 notify(
                     string.format(
-                        "Mission Assistant 最终版已启动（已加载 %d 个模块，显示/隐藏热键可在主题设置中自定义）",
+                        "任务助手已启动（已加载 %d 个模块）",
                         app_result
                     ),
                     false

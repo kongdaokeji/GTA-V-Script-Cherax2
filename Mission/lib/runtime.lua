@@ -57,23 +57,20 @@ local function capture_and_block_mouse(ui)
     end
 end
 
--- 可绑定热键的虚拟键码范围：排除鼠标键（1~7）与 0。
-local REBIND_KEY_MIN = 8
-local REBIND_KEY_MAX = 254
+-- 与 Lexis 同步可绑定范围与过滤规则；Esc 仅用于取消捕获。
+local REBIND_KEY_MIN = 0x08
+local REBIND_KEY_MAX = 0xFF
 local REBIND_CANCEL_KEY = 0x1B -- Esc
 
--- toggle 键：GetAsyncKeyState 反映锁定状态（灯亮即判定为"按下"），
--- 不参与热键扫描，避免 NumLock 常亮导致监听永远无法就绪。
-local REBIND_EXCLUDED = {
-    [0x14] = true, -- CapsLock
-    [0x90] = true, -- NumLock
-    [0x91] = true, -- ScrollLock
-}
+local function can_capture_key(vk)
+    if vk == REBIND_CANCEL_KEY then return true end
+    return App.Hotkey and App.Hotkey.IsValidKey(vk) == true
+end
 
 local function scan_down_keys()
     local down = {}
     for vk = REBIND_KEY_MIN, REBIND_KEY_MAX do
-        if not REBIND_EXCLUDED[vk] and Utils.IsKeyDown(vk) then
+        if can_capture_key(vk) and Utils.IsKeyDown(vk) then
             down[vk] = true
         end
     end
@@ -100,11 +97,11 @@ local function update_rebinding(ui)
                 return
             end
 
-            if App.Theme.Manager then
-                App.Theme.Manager.Set("ToggleKey", vk, true)
+            if App.Hotkey then
+                App.Hotkey.Set(vk, true)
             end
             ui.ToggleKey = vk
-            local key_name = App.Theme.Manager and App.Theme.Manager.ToggleKeyName(vk)
+            local key_name = App.Hotkey and App.Hotkey.ToggleKeyName(vk)
                 or tostring(vk)
             App.Actions.Common.Toast("显示/隐藏热键已设为 " .. key_name, 3000)
             return
@@ -123,8 +120,8 @@ function Runtime.Init(app)
             if ui.RebindingKey then
                 update_rebinding(ui)
             else
-                local toggle_key = App.Theme.Manager
-                    and App.Theme.Manager.Settings.ToggleKey or ui.ToggleKey
+                local toggle_key = App.Hotkey
+                    and App.Hotkey.Get() or ui.ToggleKey
                 local key_down = Utils.IsKeyDown(toggle_key)
 
                 if key_down and not ui.ToggleKeyWasDown then

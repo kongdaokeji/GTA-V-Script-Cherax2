@@ -42,9 +42,6 @@ end
 
 local function sidebar_width_for(window_width)
     local metrics = App.Theme.Current.Metrics
-    if App.Theme.Manager and App.Theme.Manager.IsIconNavigation() then
-        return 82
-    end
     return clamp(
         math.floor(window_width * metrics.SidebarWidthRatio),
         metrics.SidebarMinWidth,
@@ -104,9 +101,6 @@ local function draw_window_shell(x, y, width, height, sidebar_width)
     )
     -- 基础内容背景保留完整外轮廓圆角；拼接边由侧栏和标题栏单独收口。
     core.RectFilled(x, y, x + width, y + height, "Content", inner_radius)
-    if App.Theme.Manager then
-        App.Theme.Manager.DrawBackground(x, y, width, height, inner_radius)
-    end
 
     -- 分区不重叠，避免半透明颜色在拼接处重复混合。
     local sidebar_corner = math.min(inner_radius, sidebar_width, height * 0.5)
@@ -207,14 +201,9 @@ local function sidebar_geometry(y, height, sidebar_width)
     local short = height < 560
     local top = y + (short and 62 or 84)
     local gap = short and 2 or metrics.SidebarItemGap
-    local settings_height = short and 32 or 46
-    local settings_y = y + height - 32 - settings_height - (short and 4 or 8)
-    local count = 0
-    for _, item in ipairs(App.Data.Navigation) do
-        if not item.IsSettings then count = count + 1 end
-    end
-    count = math.max(1, count)
-    local available = math.max(1, settings_y - top - (short and 8 or 14))
+    local bottom_padding = short and 12 or 16
+    local count = math.max(1, #App.Data.Navigation)
+    local available = math.max(1, y + height - bottom_padding - top)
     local row_height = clamp(
         math.floor((available - gap * (count - 1)) / count),
         20,
@@ -226,9 +215,7 @@ local function sidebar_geometry(y, height, sidebar_width)
         Gap = gap,
         RowHeight = row_height,
         ItemX = nil,
-        ItemWidth = sidebar_width - 28,
-        SettingsY = settings_y,
-        SettingsHeight = settings_height
+        ItemWidth = sidebar_width - 28
     }
 end
 
@@ -239,17 +226,9 @@ local function process_sidebar_input(x, y, sidebar_width, height)
     layout.ItemX = x + 14
     local states = {}
 
-    local task_index = 0
     for index, item in ipairs(App.Data.Navigation) do
-        local item_y, item_height
-        if item.IsSettings then
-            item_y = layout.SettingsY
-            item_height = layout.SettingsHeight
-        else
-            item_y = layout.Top + task_index * (layout.RowHeight + layout.Gap)
-            item_height = layout.RowHeight
-            task_index = task_index + 1
-        end
+        local item_y = layout.Top + (index - 1) * (layout.RowHeight + layout.Gap)
+        local item_height = layout.RowHeight
         local pressed, hovered, active = core.SidebarHitbox(
             item,
             layout.ItemX,
@@ -258,7 +237,10 @@ local function process_sidebar_input(x, y, sidebar_width, height)
             item_height
         )
 
-        if pressed then ui.SelectedPage = item.Id end
+        if pressed then
+            ui.SelectedPage = item.Id
+            ui.PreviousPage = nil
+        end
         states[index] = {Y=item_y, Height=item_height, Hovered=hovered, Active=active}
     end
 
@@ -284,20 +266,15 @@ local function draw_header(x, y, width, sidebar_width)
     local ui = App.Data.State.Ui
     local metrics = App.Theme.Current.Metrics
     local page = App.Gui.Router.GetCurrentPage()
-    local icon_only = App.Theme.Manager and App.Theme.Manager.IsIconNavigation()
-    local icon_size = icon_only and 28 or (sidebar_width < 220 and 24 or 28)
-    local icon_x = icon_only
-        and (x + math.floor((sidebar_width - icon_size) * 0.5))
-        or (x + (sidebar_width < 220 and 20 or 24))
+    local icon_size = sidebar_width < 220 and 24 or 28
+    local icon_x = x + (sidebar_width < 220 and 20 or 24)
     local icon_y = y + (sidebar_width < 220 and 16 or 14)
 
     draw_title_icon(icon_x, icon_y, icon_size)
 
-    if not icon_only then
-        local title_x = icon_x + icon_size + (sidebar_width < 220 and 7 or 8)
-        local title_y = y + (sidebar_width < 220 and 19 or 18)
-        core.Text(title_x, title_y, "任务助手", "Text")
-    end
+    local title_x = icon_x + icon_size + (sidebar_width < 220 and 7 or 8)
+    local title_y = y + (sidebar_width < 220 and 19 or 18)
+    core.Text(title_x, title_y, "任务助手", "Text")
     core.RectFilled(icon_x, y + 54, icon_x + icon_size, y + 56, "Accent", 1)
 
     core.Text(x + sidebar_width + 32, y + 22, page.Label, "Text")
@@ -318,34 +295,69 @@ local function draw_header(x, y, width, sidebar_width)
         1
     )
 
-    -- 顶栏主题模式快捷切换。
-    if App.Theme.Manager then
-        local theme_size = 40
-        local theme_x = x + width - 104
-        local theme_y = y + 14
-        local theme_pressed, theme_hovered, theme_active = core.Hitbox(
-            "##MissionThemeModeToggle", theme_x, theme_y, theme_size, theme_size
+    -- 右上角齿轮：进入设置页（显示/隐藏热键）。
+    local settings_size = 40
+    local settings_x = x + width - 104
+    local settings_y = y + 14
+    local settings_pressed, settings_hovered, settings_active = core.Hitbox(
+        "##MissionSettingsToggle",
+        settings_x,
+        settings_y,
+        settings_size,
+        settings_size
+    )
+    if settings_hovered then
+        core.RectFilled(
+            settings_x,
+            settings_y,
+            settings_x + settings_size,
+            settings_y + settings_size,
+            settings_active and "ClosePressed" or "CloseHover",
+            6
         )
-        if theme_hovered then
-            core.RectFilled(theme_x, theme_y, theme_x + theme_size, theme_y + theme_size,
-                theme_active and "ClosePressed" or "CloseHover", 6)
-        end
-        local cx, cy = theme_x + 20, theme_y + 20
-        if App.Theme.Manager.IsGlass() then
-            core.Circle(cx, cy, 7, theme_hovered and "Text" or "TextMuted", 16, 1.7)
-            core.CircleFilled(cx + 3, cy - 2, 6, "Header", 16)
+        core.Tooltip("设置")
+    end
+    local gear_color = settings_hovered and "Text" or "TextMuted"
+    local gear_x = settings_x + 20
+    local gear_y = settings_y + 20
+
+    -- 传统齿轮：8 个梯形宽齿、连续齿根环和大中心孔。
+    local tooth_count = 8
+    local root_radius = 6.4
+    local outer_radius = 8.8
+    local base_half_angle = math.pi * 16 / 180
+    local tip_half_angle = math.pi * 10 / 180
+    for tooth = 0, tooth_count - 1 do
+        local angle = tooth * math.pi * 2 / tooth_count
+        local base_left = angle - base_half_angle
+        local tip_left = angle - tip_half_angle
+        local tip_right = angle + tip_half_angle
+        local base_right = angle + base_half_angle
+        local base_left_x = gear_x + math.cos(base_left) * root_radius
+        local base_left_y = gear_y + math.sin(base_left) * root_radius
+        local tip_left_x = gear_x + math.cos(tip_left) * outer_radius
+        local tip_left_y = gear_y + math.sin(tip_left) * outer_radius
+        local tip_right_x = gear_x + math.cos(tip_right) * outer_radius
+        local tip_right_y = gear_y + math.sin(tip_right) * outer_radius
+        local base_right_x = gear_x + math.cos(base_right) * root_radius
+        local base_right_y = gear_y + math.sin(base_right) * root_radius
+        core.Line(base_left_x, base_left_y, tip_left_x, tip_left_y,
+            gear_color, 2.2)
+        core.Line(tip_left_x, tip_left_y, tip_right_x, tip_right_y,
+            gear_color, 2.2)
+        core.Line(tip_right_x, tip_right_y, base_right_x, base_right_y,
+            gear_color, 2.2)
+    end
+    core.Circle(gear_x, gear_y, root_radius, gear_color, 32, 2.4)
+    core.Circle(gear_x, gear_y, 4.0, gear_color, 24, 2.3)
+    if settings_pressed then
+        local ui = App.Data.State.Ui
+        if ui.SelectedPage == "settings" then
+            ui.SelectedPage = ui.PreviousPage or "perico"
+            ui.PreviousPage = nil
         else
-            core.Circle(cx, cy, 5, theme_hovered and "Text" or "TextMuted", 16, 1.5)
-            for ray = 0, 7 do
-                local angle = ray * math.pi / 4
-                core.Line(cx + math.cos(angle) * 8, cy + math.sin(angle) * 8,
-                    cx + math.cos(angle) * 11, cy + math.sin(angle) * 11,
-                    theme_hovered and "Text" or "TextMuted", 1.3)
-            end
-        end
-        if theme_pressed then
-            App.Theme.Manager.Set("UiMode",
-                App.Theme.Manager.IsGlass() and "classic" or "glass", true)
+            ui.PreviousPage = ui.SelectedPage
+            ui.SelectedPage = "settings"
         end
     end
 
@@ -393,11 +405,10 @@ local function draw_header(x, y, width, sidebar_width)
     end
 end
 
-local function draw_sidebar(x, y, sidebar_width, height, layout, states)
+local function draw_sidebar(layout, states)
     local core = App.Widgets.Core
     local ui = App.Data.State.Ui
 
-    local icon_only = App.Theme.Manager and App.Theme.Manager.IsIconNavigation()
     for index, item in ipairs(App.Data.Navigation) do
         local state = states[index]
         core.SidebarItem(
@@ -409,13 +420,8 @@ local function draw_sidebar(x, y, sidebar_width, height, layout, states)
             state.Height,
             state.Hovered,
             state.Active,
-            icon_only
+            false
         )
-    end
-
-    if not icon_only then
-        local hotkey = App.Theme.Manager and App.Theme.Manager.ToggleKeyName() or "PgDn"
-        core.Text(x + 24, y + height - 28, hotkey .. " 显示 / 隐藏", "TextSecondary")
     end
 end
 
@@ -499,9 +505,7 @@ function MainWindow.Draw()
         ImGuiCond.Always
     )
     ImGui.Begin("##MissionAssistantCustomWindow", true, flags)
-    if App.Theme.Manager then
-        ImGui.SetWindowFontScale(App.Theme.Manager.TextMultiplier())
-    end
+    ImGui.SetWindowFontScale(metrics.FontScale)
 
     local host_x, host_y = ImGui.GetWindowPos()
     local host_width, host_height = ImGui.GetWindowSize()
@@ -519,7 +523,7 @@ function MainWindow.Draw()
 
     draw_window_shell(x, y, width, height, sidebar_width)
     draw_header(x, y, width, sidebar_width)
-    draw_sidebar(x, y, sidebar_width, height, nav_layout, nav_states)
+    draw_sidebar(nav_layout, nav_states)
 
     local content_x = x + sidebar_width + metrics.ContentPadding
     local content_y = y + metrics.HeaderHeight + 24

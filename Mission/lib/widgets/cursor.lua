@@ -37,9 +37,6 @@ function Cursor.Init(app)
     App=app
     local ok,err=submit("classic","cursor.png")
     if not ok then Logger.LogError("[Mission Cursor] "..tostring(err))end
-    -- 玻璃光标缺失时仍允许启动，自动回退经典光标。
-    local glass_ok,glass_err=submit("glass","cursor_glass.png")
-    if not glass_ok then Logger.LogError("[Mission Cursor] "..tostring(glass_err))end
     App.Widgets.Cursor=Cursor
     return true
 end
@@ -47,14 +44,14 @@ end
 function Cursor.Draw()
     local ui=App.Data.State.Ui
     if not ui.Visible or not ui.DrawSoftwareCursor then return false end
-    local style=App.Theme.Manager and App.Theme.Manager.CursorStyle()or"classic"
-    local object=resolve(style)or resolve("classic")
+    local style="classic"
+    local object=resolve(style)
     if not object then return false end
     local mx,my=ImGui.GetMousePos();if not mx or not my then return false end
     local ok,texture=pcall(function()return object:GetCurrent()end);if not ok or not texture then return false end
 
     local metrics=App.Theme.Current.Metrics
-    local height=style=="glass"and 22 or metrics.CursorHeight
+    local height=metrics.CursorHeight
     local width=height*metrics.CursorTextureWidth/metrics.CursorTextureHeight
     local draw_x=mx-width*metrics.CursorHotspotX/metrics.CursorTextureWidth
     local draw_y=my-height*metrics.CursorHotspotY/metrics.CursorTextureHeight

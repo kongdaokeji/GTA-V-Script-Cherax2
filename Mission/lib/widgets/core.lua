@@ -248,14 +248,6 @@ function Core.NavigationIcon(id, x, y, size, color_name, accent_name)
         line(2, 6, 2, 16); line(16, 6, 16, 16); line(2, 16, 16, 16)
         rect(7.5, 9, 3, 7, accent_name, 0.6)
         line(4.5, 8, 4.5, 14); line(13.5, 8, 13.5, 14)
-    elseif id == "theme" then
-        ring(9, 9, 3.2, nil, 1.3, 12); ring(9, 9, 1.2, accent_name, 1, 8)
-        for angle = 0, 7 do
-            local a = angle * math.pi / 4
-            local x1, y1 = 9 + math.cos(a) * 5, 9 + math.sin(a) * 5
-            local x2, y2 = 9 + math.cos(a) * 7, 9 + math.sin(a) * 7
-            line(x1, y1, x2, y2, angle % 2 == 0 and accent_name or color_name, 1.2)
-        end
     else
         ring(9, 9, 5.5, nil, 1.3, 12); ring(9, 9, 1.2, accent_name, 1, 8)
     end

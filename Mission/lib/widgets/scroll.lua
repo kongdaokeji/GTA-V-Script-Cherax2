@@ -31,18 +31,8 @@ function Scroll.Begin(id, x, y, width, height, options)
     local background = options.BackgroundColor or "Panel"
     local scrollbar_background = options.ScrollbarBackgroundColor or background
 
-    local transparent_glass = App.Theme.Manager
-        and App.Theme.Manager.IsGlass()
-        and background == "Content"
-
-    if transparent_glass then
-        -- 玻璃页面只使用主窗口统一遮罩，避免 Child 与 Padding 形成明暗沟槽。
-        ImGui.PushStyleColor(ImGuiCol.ChildBg, 0.0, 0.0, 0.0, 0.0)
-        ImGui.PushStyleColor(ImGuiCol.ScrollbarBg, 0.0, 0.0, 0.0, 0.0)
-    else
-        core.PushStyleColor(ImGuiCol.ChildBg, background)
-        core.PushStyleColor(ImGuiCol.ScrollbarBg, scrollbar_background)
-    end
+    core.PushStyleColor(ImGuiCol.ChildBg, background)
+    core.PushStyleColor(ImGuiCol.ScrollbarBg, scrollbar_background)
     core.PushStyleColor(ImGuiCol.ScrollbarGrab, options.ScrollbarColor or "Scrollbar")
     core.PushStyleColor(ImGuiCol.ScrollbarGrabHovered, options.ScrollbarHoverColor or "ScrollbarHover")
     core.PushStyleColor(ImGuiCol.ScrollbarGrabActive, options.ScrollbarActiveColor or "Accent")

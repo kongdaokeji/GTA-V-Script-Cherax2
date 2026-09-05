@@ -3,7 +3,7 @@
 Cherax Lua 平台的 GTA Online 任务辅助菜单：模块化结构 + 自绘 UI，启动后直接进入主界面。
 
 - 应用模块：46 个
-- 显示/隐藏热键：默认 PageDown，可在主题设置中重绑定
+- 显示/隐藏热键：默认 PgDn，可在右上角齿轮进入的设置中重绑定
 
 ## 如何运行
 
@@ -17,7 +17,8 @@ Mission/
 ├── lib/
 │   ├── probe.lua                  # require 与共享 MissionApp 校验
 │   ├── runtime.lua                # 唯一 ON_PRESENT：热键、鼠标捕获、游戏输入屏蔽
-│   ├── mainwindow.lua             # 自绘主窗口：导航、拖动/缩放
+│   ├── hotkey.lua                 # 显示/隐藏热键配置（Mission/hotkey.cfg）
+│   ├── mainwindow.lua             # 自绘主窗口：导航、右上角齿轮设置、拖动/缩放
 │   ├── data/                      # 业务数据、地址、UI 状态（11 个）
 │   ├── actions/                   # 游戏数据读写与 Native 操作（11 个）
 │   ├── gui/
@@ -25,9 +26,8 @@ Mission/
 │   │   └── pages/                 # 页面布局（11 个）
 │   └── widgets/                   # 自绘控件（core/layout/button/toggle/input/select/scroll/cursor）
 └── theme/
-    ├── default.lua                # 经典深紫基础主题
-    ├── manager.lua                # 玻璃主题、背景扫描、鼠标规则
-    └── assets/                    # cursor.png、cursor_glass.png
+    ├── default.lua                # 经典深紫基础配色
+    └── assets/                    # cursor.png
 docs/
 ├── api/                           # 开发辅助 API 类型/函数声明，不参与运行时加载
 │   ├── Cherax API.lua             # Cherax Lua API / 类型声明
@@ -38,7 +38,7 @@ docs/
 
 ## 页面
 
-十个任务页 + 主题设置：佩里科岛、赌场豪劫、末日豪劫、公寓抢劫、科兹中心、其他任务、任务载具、快捷功能、单人任务、资产管理。
+十个任务页：佩里科岛、赌场豪劫、末日豪劫、公寓抢劫、科兹中心、其他任务、任务载具、快捷功能、单人任务、资产管理。
 
 ## 分层约定（概要）
 
@@ -58,8 +58,7 @@ docs/
 
 这两个文件用于代码补全、类型提示和 API 查询，不属于 Mission Assistant 的运行时模块，也不需要由 `Mission_Loader.lua` 加载。更新 Cherax/ImGui API 定义时，可直接替换对应文件。
 
-## 主题与资源
+## 设置与资源
 
-- 经典 / 玻璃两套界面，玻璃含浅色/深色遮罩与透明度控制。
-- 显示/隐藏热键可在主题设置中重绑定，默认 PageDown。
-- 自定义背景图可选放入 `Mission/theme/backgrounds/`，在主题设置中刷新。
+- 右上角齿轮进入「设置」页，可重绑定显示/隐藏热键（默认 PgDn，保存于 `Mission/hotkey.cfg`；旧版 `Mission/theme/theme.cfg` 中的热键会自动迁移）。
+- 经典界面基础配色定义在 `Mission/theme/default.lua`；`Mission/theme/assets/cursor.png` 为自定义鼠标纹理。

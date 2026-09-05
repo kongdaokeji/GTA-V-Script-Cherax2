@@ -9,7 +9,8 @@ function State.Init(App)
         Ui = {
             Visible = true,
             SelectedPage = "perico",
-            ToggleKey = 0x22, -- PageDown
+            PreviousPage = nil,
+            ToggleKey = 0x22, -- PgDn (PageDown)
             ToggleKeyWasDown = false,
             RebindingKey = false,
             RebindBaseline = nil,
@@ -40,8 +41,7 @@ function State.Init(App)
         { Id = "vehicles",  Label = "任务载具", Marker = "V" },
         { Id = "quick",     Label = "快捷功能", Marker = "Q" },
         { Id = "solo",      Label = "单人任务", Marker = "S" },
-        { Id = "asset",     Label = "资产管理", Marker = "M" },
-        { Id = "theme",     Label = "主题设置", Marker = "T", IsSettings = true }
+        { Id = "asset",     Label = "资产管理", Marker = "M" }
     }
 
     App.Data.GetNavigationItem = function(page_id)
