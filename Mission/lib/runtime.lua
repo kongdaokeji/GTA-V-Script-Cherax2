@@ -6,10 +6,18 @@ local Runtime = {
 
 local App
 
+-- 记录上一帧窗口是否可见；从隐藏切到可见的第一帧恢复保存的鼠标位置。
+local mouse_was_visible = false
+
 local NATIVES = {
     DISABLE_CONTROL_ACTION = 0xFE99B66D079CF6BC,
-    DISABLE_PLAYER_FIRING = 0x5E6CC07646BBEAB8
+    DISABLE_PLAYER_FIRING = 0x5E6CC07646BBEAB8,
+    GET_DISABLED_CONTROL_NORMAL = 0x11E65974A982637C, -- PAD::GET_DISABLED_CONTROL_NORMAL(int control, int action) -> float
+    SET_CURSOR_POSITION = 0xFC695459D4D0E219          -- PAD::SET_CURSOR_POSITION(float x, float y) -> BOOL
 }
+
+local MOUSE_CURSOR_CONTROL_X = 239
+local MOUSE_CURSOR_CONTROL_Y = 240
 
 -- 任务助手打开时屏蔽鼠标视角、全部开火方式和滚轮武器切换。
 local MOUSE_GAME_ACTIONS = {
@@ -55,6 +63,36 @@ local function capture_and_block_mouse(ui)
             true
         )
     end
+end
+
+-- 窗口关闭前记住鼠标位置，重新打开时恢复（坐标均为归一化 0~1）。
+local function clamp_mouse_axis(value)
+    if type(value) ~= "number" then return nil end
+    if value ~= value then return nil end -- NaN
+    if value < 0 then return 0 end
+    if value > 1 then return 1 end
+    return value
+end
+
+local function read_mouse_pos()
+    local ok_x, x = pcall(Natives.InvokeFloat, NATIVES.GET_DISABLED_CONTROL_NORMAL, 0, MOUSE_CURSOR_CONTROL_X)
+    local ok_y, y = pcall(Natives.InvokeFloat, NATIVES.GET_DISABLED_CONTROL_NORMAL, 0, MOUSE_CURSOR_CONTROL_Y)
+    if not ok_x or not ok_y then return nil, nil end
+    return clamp_mouse_axis(x), clamp_mouse_axis(y)
+end
+
+local function save_mouse_pos(ui)
+    local x, y = read_mouse_pos()
+    if x ~= nil and y ~= nil then
+        ui.MousePosX, ui.MousePosY = x, y
+    end
+end
+
+local function restore_mouse_pos(ui)
+    if ui.MousePosRestore ~= true then return end
+    local x, y = clamp_mouse_axis(ui.MousePosX), clamp_mouse_axis(ui.MousePosY)
+    if x == nil or y == nil then return end
+    pcall(Natives.InvokeBool, NATIVES.SET_CURSOR_POSITION, x, y)
 end
 
 -- 与 Lexis 同步可绑定范围与过滤规则；Esc 仅用于取消捕获。
@@ -131,11 +169,23 @@ function Runtime.Init(app)
             end
 
             if not ui.Visible then
+                if mouse_was_visible then
+                    -- 关闭瞬间读一次并保存；此后窗口隐藏期间不再读取，
+                    -- 转视角产生的新坐标不会覆盖保存值。
+                    save_mouse_pos(ui)
+                end
+                mouse_was_visible = false
                 ImGui.CaptureMouseFromApp(false)
                 return
             end
 
             capture_and_block_mouse(ui)
+
+            if not mouse_was_visible then
+                restore_mouse_pos(ui)
+            end
+            mouse_was_visible = true
+
             App.Gui.MainWindow.Draw()
 
             -- 最后绘制统一自定义鼠标；不读取 ImGui 光标类型。

@@ -18,6 +18,10 @@ function State.Init(App)
             LayoutMode = "double",
             BlockGameMouse = true,
             DrawSoftwareCursor = true,
+            -- 窗口关闭前记住鼠标位置，重新打开时恢复（默认启用）
+            MousePosRestore = true,
+            MousePosX = nil,
+            MousePosY = nil,
 
                 Window = {
                 X = 120,
