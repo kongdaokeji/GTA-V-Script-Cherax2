@@ -31,7 +31,7 @@ local function draw_content(data,a,x,y,w)
     local quick_actions={
         {"QuickCutscene","跳过过场动画",a.SkipCutscene},{"QuickConversation","跳过当前对话",a.SkipConversation},
         {"QuickSession","切换非公开好友战局",a.SwitchFriendSession},{"QuickBail","卡云退主菜单",a.BailToMainMenu},
-        {"QuickWeekly","重置每周首次",a.ResetWeekly}
+        {"QuickCloudSave","强制云存档",a.ForceCloudSave}
     }
     if w<620 then
         local sy=draw_panel("自我选项",self_actions,x,y,w);local qy=y+sy+14

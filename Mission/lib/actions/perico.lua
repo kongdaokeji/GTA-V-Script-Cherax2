@@ -399,13 +399,6 @@ function Perico.TeleportKey()
     end)
 end
 
-function Perico.TeleportBag()
-    local data, common = context()
-    return common.Queue("传送到背包", function()
-        common.TeleportToBlip(data.Config, 765)
-    end)
-end
-
 function Perico.SetAutoLootEnabled(enabled)
     local data, common = context()
     enabled = enabled == true

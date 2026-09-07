@@ -208,9 +208,8 @@ local function draw_other(data, actions, x, y, width)
         {Id="PericoNpcCut", Label="移除NPC分红", Run=actions.RemoveNpcCut},
         {Id="PericoLives", Label="无限生命数", Run=actions.InfiniteLives},
         {Id="PericoBag", Label="无限背包", Run=actions.InfiniteBag},
-        {Id="PericoKeycard", Label="传送到门禁卡", Run=actions.TeleportKeycard},
         {Id="PericoKey", Label="传送到钥匙", Run=actions.TeleportKey},
-        {Id="PericoBagTeleport", Label="传送到背包", Run=actions.TeleportBag}
+        {Id="PericoKeycard", Label="传送到门禁卡", Run=actions.TeleportKeycard}
     }
     local height = PANEL_HEADER + CONTROL_HEIGHT + GROUP_GAP
         + stack_height(#action_list, BUTTON_HEIGHT) + PANEL_BOTTOM
