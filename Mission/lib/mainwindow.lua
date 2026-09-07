@@ -456,8 +456,7 @@ local function draw_header(x, y, width, sidebar_width)
     )
 
     if hovered and ImGui.IsMouseClicked(ImGuiMouseButton.ImGuiMouseButton_Left, false) then
-        cancel_rebinding(ui)
-        ui.Visible = false
+        MainWindow.SetVisible(false)
     end
 end
 
@@ -530,12 +529,28 @@ function MainWindow.Init(app)
     return true
 end
 
-function MainWindow.Toggle()
+function MainWindow.SetVisible(visible)
     local ui = App.Data.State.Ui
+    local next_visible = visible == true
+    if ui.Visible == next_visible then return true end
+
     if ui.Visible then
         cancel_rebinding(ui)
     end
-    ui.Visible = not ui.Visible
+
+    local setter = App.Runtime and App.Runtime.SetWindowVisible
+    if type(setter) == "function" then
+        return setter(next_visible)
+    end
+
+    -- Runtime 尚未初始化时的安全回退；正常运行中统一走上面的保存/恢复路径。
+    ui.Visible = next_visible
+    return true
+end
+
+function MainWindow.Toggle()
+    local ui = App.Data.State.Ui
+    return MainWindow.SetVisible(not ui.Visible)
 end
 
 function MainWindow.Draw()

@@ -19,6 +19,11 @@ function State.Init(App)
             BlockGameMouse = true,
             DrawSoftwareCursor = true,
 
+            MousePositionState = {
+                RestorePending = false,
+                RestorePasses = 0
+            },
+
             -- 用于检测运行中分辨率变化；变化时只重新约束窗口，不改变正常拖拽行为。
             DisplayWidth = nil,
             DisplayHeight = nil,
