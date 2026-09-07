@@ -36,7 +36,7 @@ local function acquire(data,candidate,common,show)
         if show then common.Toast("当前已经是脚本主机")end
         return true
     end
-    GTA.ForceScriptHost(candidate.Hash);Script.Yield(1500)
+    GTA.ForceScriptHost(candidate.Hash);if not common.Yield(1500) then return false end
     if ScriptLocal.GetInt(candidate.Hash,candidate.Check)==1 then
         if show then common.Toast("成功获取脚本主机")end
         return true

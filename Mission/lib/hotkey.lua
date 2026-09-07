@@ -80,17 +80,24 @@ function Hotkey.IsValidKey(vk)
 end
 
 function Hotkey.Save()
-    return FileMgr.WriteFileContent(
+    if not Hotkey.ConfigPath or Hotkey.Key == nil then return false end
+    local ok, result = pcall(
+        FileMgr.WriteFileContent,
         Hotkey.ConfigPath,
         CONFIG_KEY .. "=" .. tostring(Hotkey.Key) .. "\n",
         false
-    ) == true
+    )
+    return ok and result == true
 end
 
 function Hotkey.Set(vk, save)
     if not valid_key(vk) then return false end
+    local previous = Hotkey.Key
     Hotkey.Key = math.floor(tonumber(vk))
-    if save then return Hotkey.Save() end
+    if save and not Hotkey.Save() then
+        Hotkey.Key = previous
+        return false
+    end
     return true
 end
 
@@ -110,16 +117,30 @@ end
 
 local function load_key()
     local key = read_config_file(Hotkey.ConfigPath)
-    if key then return key end
-    -- 兼容旧版主题配置：只迁移 ToggleKey 一项。
+    if key then return key, false end
+
+    -- 旧主题配置只读取 ToggleKey；读取成功后由 Init 写入新的 hotkey.cfg。
     local legacy = join(App.Loader.LuaRoot, "Mission/theme/theme.cfg")
-    return read_config_file(legacy) or DEFAULT_KEY
+    local legacy_key = read_config_file(legacy)
+    if legacy_key then return legacy_key, true end
+
+    return DEFAULT_KEY, false
 end
 
 function Hotkey.Init(app)
     App = app
     Hotkey.ConfigPath = win(join(App.Loader.LuaRoot, "Mission/hotkey.cfg"))
-    Hotkey.Key = load_key()
+    local key, migrate = load_key()
+    Hotkey.Key = key
+
+    if migrate then
+        if Hotkey.Save() then
+            Logger.LogInfo("[Mission Hotkey] 已将旧热键配置迁移到 Mission/hotkey.cfg")
+        else
+            Logger.LogError("[Mission Hotkey] 旧热键读取成功，但迁移到 Mission/hotkey.cfg 失败")
+        end
+    end
+
     App.Hotkey = Hotkey
     return true
 end

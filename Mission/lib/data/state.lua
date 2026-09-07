@@ -18,12 +18,12 @@ function State.Init(App)
             LayoutMode = "double",
             BlockGameMouse = true,
             DrawSoftwareCursor = true,
-            -- 窗口关闭前记住鼠标位置，重新打开时恢复（默认启用）
-            MousePosRestore = true,
-            MousePosX = nil,
-            MousePosY = nil,
 
-                Window = {
+            -- 用于检测运行中分辨率变化；变化时只重新约束窗口，不改变正常拖拽行为。
+            DisplayWidth = nil,
+            DisplayHeight = nil,
+
+            Window = {
                 X = 120,
                 Y = 80,
                 Width = 1160,

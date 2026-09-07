@@ -205,7 +205,7 @@ function Doomsday.FinishActThree()
                 data.Config.Locals.HeistState,
                 checkpoint | 131328
             )
-            Script.Yield(2000)
+            if not common.Yield(2000) then return end
             ScriptLocal.SetInt(data.Config.Scripts.OldHeist, data.Config.Locals.QuickFinishBase, 12)
             ScriptLocal.SetInt(data.Config.Scripts.OldHeist, data.Config.Locals.CutPercent, 150)
             ScriptLocal.SetInt(data.Config.Scripts.OldHeist, data.Config.Locals.Timer1, 99999)

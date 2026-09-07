@@ -21,16 +21,44 @@ function Common.Toast(message, duration)
     )
 end
 
+function Common.IsCurrentGeneration(expected_generation)
+    if App == nil or type(MissionApp) ~= "table" or MissionApp ~= App then
+        return false
+    end
+
+    local current = tonumber(App.Generation)
+    if current == nil then return false end
+    if expected_generation == nil then return true end
+    return current == tonumber(expected_generation)
+end
+
+function Common.Yield(milliseconds)
+    local generation = App and tonumber(App.Generation) or nil
+    Script.Yield(milliseconds)
+    return Common.IsCurrentGeneration(generation)
+end
+
 function Common.Queue(label, callback)
     if type(callback) ~= "function" then
+        return false
+    end
+
+    local generation = App and tonumber(App.Generation) or nil
+    if not Common.IsCurrentGeneration(generation) then
         return false
     end
 
     local queued, result = pcall(
         Script.QueueJob,
         function()
-            local ok, err = pcall(callback)
-            if not ok then
+            local function is_current()
+                return Common.IsCurrentGeneration(generation)
+            end
+
+            if not is_current() then return end
+
+            local ok, err = pcall(callback, is_current, generation)
+            if not ok and is_current() then
                 Logger.LogError(
                     string.format(
                         "[Mission Action] %s: %s",
@@ -131,7 +159,7 @@ function Common.WithMissionHost(config, callback)
     end
 
     GTA.ForceScriptHost(selected.Hash)
-    Script.Yield(1500)
+    if not Common.Yield(1500) then return false end
 
     if ScriptLocal.GetInt(selected.Hash, selected.Check) ~= 1 then
         Common.Toast("接管脚本主机失败")

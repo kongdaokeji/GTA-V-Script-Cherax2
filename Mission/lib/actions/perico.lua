@@ -282,7 +282,7 @@ function Perico.TeleportSelected()
                     common.Toast("已传送到虎鲸内部")
                     return
                 end
-                Script.Yield(50)
+                if not common.Yield(50) then return end
             end
             common.Toast("传送超时：5秒内未传送到虎鲸内部")
             return

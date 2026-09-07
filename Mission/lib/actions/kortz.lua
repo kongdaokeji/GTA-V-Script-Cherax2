@@ -29,7 +29,7 @@ local function with_finale_host(data, common, callback)
         return false
     end
     GTA.ForceScriptHost(data.Config.Scripts.Finale)
-    Script.Yield(1500)
+    if not common.Yield(1500) then return false end
     if ScriptLocal.GetInt(data.Config.Scripts.Finale, data.Config.Locals.HostCheck) ~= 1 then
         common.Toast("获取科兹中心脚本主机失败")
         return false
@@ -196,7 +196,7 @@ function Kortz.AcceleratePrimary()
     local data, common = context()
     return common.Queue("加速获取主要目标", function()
         ScriptLocal.SetInt(data.Config.Scripts.Finale, data.Config.Locals.TargetStage, 15)
-        Script.Yield(2000)
+        if not common.Yield(2000) then return end
         ScriptLocal.SetInt(data.Config.Scripts.Finale, data.Config.Locals.TargetStage, 17)
         common.Toast("已加速获取主要目标")
     end)

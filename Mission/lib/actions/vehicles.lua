@@ -36,12 +36,12 @@ function Vehicles.SpawnPreset(index)
     return queued
 end
 
-local function request_control(data,vehicle)
+local function request_control(data,vehicle,common)
     local n=data.Natives
     for _=1,30 do
         if Natives.InvokeBool(n.NETWORK_HAS_CONTROL_OF_ENTITY,vehicle)then return true end
         Natives.InvokeBool(n.NETWORK_REQUEST_CONTROL_OF_ENTITY,vehicle)
-        Script.Yield(10)
+        if not common.Yield(10) then return nil end
     end
     return Natives.InvokeBool(n.NETWORK_HAS_CONTROL_OF_ENTITY,vehicle)
 end
@@ -58,7 +58,9 @@ function Vehicles.Repair()
             end
             local vehicle=Natives.InvokeInt(data.Natives.GET_VEHICLE_PED_IS_IN,ped,false)
             if vehicle==0 then common.Toast("无法获取当前载具");return end
-            if not request_control(data,vehicle)then common.Toast("无法取得载具控制权");return end
+            local controlled=request_control(data,vehicle,common)
+            if controlled==nil then return end
+            if not controlled then common.Toast("无法取得载具控制权");return end
             local n=data.Natives
             Natives.InvokeVoid(n.SET_VEHICLE_FIXED,vehicle)
             Natives.InvokeVoid(n.SET_VEHICLE_DEFORMATION_FIXED,vehicle)

@@ -97,7 +97,7 @@ function Apartment.ApplySetup()
         ScriptGlobal.SetInt(g.PlayerStateBase + player * g.PlayerStateStride + g.PlayerStateOffset, 1)
         ScriptGlobal.SetInt(g.ContentState, 0)
         ScriptGlobal.SetInt(g.ContentLaunch, 0)
-        Script.Yield(1000)
+        if not common.Yield(1000) then return end
         ScriptGlobal.SetInt(g.ContentLaunch, 5)
         ScriptGlobal.SetInt(g.BoardState, 10)
         common.Toast("已完成并刷新策划板")
@@ -132,7 +132,7 @@ function Apartment.ApplyPayouts()
         for index = 2, 4 do
             ScriptGlobal.SetInt(g.Payout1 + index, payouts[index])
         end
-        Script.Yield(1000)
+        if not common.Yield(1000) then return end
         local second_first = -1 * (first + payouts[2] + payouts[3] + payouts[4] - 100)
         ScriptGlobal.SetInt(g.Payout2, second_first)
         for index = 2, 4 do
@@ -171,7 +171,7 @@ function Apartment.AutoPayout()
         local g = data.Config.Globals
         ScriptGlobal.SetInt(g.Payout1 + 1, first)
         for index = 2, 4 do ScriptGlobal.SetInt(g.Payout1 + index, payout) end
-        Script.Yield(1000)
+        if not common.Yield(1000) then return end
         ScriptGlobal.SetInt(g.Payout2, -1 * (first + payout * 3 - 100))
         for index = 1, 3 do ScriptGlobal.SetInt(g.Payout2 + index, payout) end
         common.Toast(string.format(
@@ -275,9 +275,9 @@ local function wait_for_cutscene(data, delay_after, callback, common)
             data.Config.Locals.HeistState,
             checkpoint | 131072
         )
-        Script.Yield(2000)
+        if not common.Yield(2000) then return false end
         if Natives.InvokeBool(data.Config.Natives.IS_CUTSCENE_PLAYING) then
-            Script.Yield(delay_after)
+            if not common.Yield(delay_after) then return false end
             callback()
             return true
         end
@@ -336,7 +336,7 @@ function Apartment.CriminalMastermind()
                 }) do
                     write_stat_bool(common, stat, false)
                 end
-                Script.Yield(1000)
+                if not common.Yield(1000) then return end
                 settle_pacific(data, common)
             end, common)
         end)

@@ -10,33 +10,65 @@ local function clamp(value, minimum, maximum)
     return math.max(minimum, math.min(value, maximum))
 end
 
+local function cancel_rebinding(ui)
+    if not ui then return end
+    ui.RebindingKey = false
+    ui.RebindBaseline = nil
+end
+
 local function initialize_window_position()
     local ui = App.Data.State.Ui
-    if ui.PositionInitialized then
+    local display_width, display_height = ImGui.GetDisplaySize()
+    display_width, display_height = tonumber(display_width), tonumber(display_height)
+
+    if not display_width or not display_height
+        or display_width <= 0 or display_height <= 0 then
         return
     end
 
-    local display_width, display_height = ImGui.GetDisplaySize()
+    local resolution_changed = ui.DisplayWidth == nil
+        or ui.DisplayHeight == nil
+        or math.abs(ui.DisplayWidth - display_width) >= 0.5
+        or math.abs(ui.DisplayHeight - display_height) >= 0.5
+
+    if ui.PositionInitialized and not resolution_changed then
+        return
+    end
+
     local window = ui.Window
+    local maximum_width = math.max(1, display_width - 16)
+    local maximum_height = math.max(1, display_height - 16)
+    local minimum_width = math.min(window.MinimumWidth, maximum_width)
+    local minimum_height = math.min(window.MinimumHeight, maximum_height)
 
-    if display_width and display_width > 0 then
-        window.Width = clamp(
-            window.Width,
-            math.min(window.MinimumWidth, display_width - 16),
-            math.max(window.MinimumWidth, display_width - 36)
-        )
-        window.X = math.max(8, (display_width - window.Width) * 0.5)
+    window.Width = clamp(window.Width, minimum_width, maximum_width)
+    window.Height = clamp(window.Height, minimum_height, maximum_height)
+
+    local min_x, max_x
+    if display_width >= window.Width + 16 then
+        min_x, max_x = 8, display_width - window.Width - 8
+    else
+        min_x, max_x = 0, math.max(0, display_width - window.Width)
     end
 
-    if display_height and display_height > 0 then
-        window.Height = clamp(
-            window.Height,
-            math.min(window.MinimumHeight, display_height - 16),
-            math.max(window.MinimumHeight, display_height - 36)
-        )
-        window.Y = math.max(8, (display_height - window.Height) * 0.5)
+    local min_y, max_y
+    if display_height >= window.Height + 16 then
+        min_y, max_y = 8, display_height - window.Height - 8
+    else
+        min_y, max_y = 0, math.max(0, display_height - window.Height)
     end
 
+    if not ui.PositionInitialized then
+        window.X = clamp((display_width - window.Width) * 0.5, min_x, max_x)
+        window.Y = clamp((display_height - window.Height) * 0.5, min_y, max_y)
+    else
+        -- 分辨率改变后保留原位置意图，但保证整个窗口重新落入新画面。
+        window.X = clamp(window.X, min_x, max_x)
+        window.Y = clamp(window.Y, min_y, max_y)
+    end
+
+    ui.DisplayWidth = display_width
+    ui.DisplayHeight = display_height
     ui.PositionInitialized = true
 end
 
@@ -190,8 +222,27 @@ local function handle_title_drag(x, y, width)
             ImGuiMouseButton.ImGuiMouseButton_Left,
             0
         )
-        window.X = window.X + delta_x
-        window.Y = window.Y + delta_y
+        local next_x = window.X + delta_x
+        local next_y = window.Y + delta_y
+        local display_width, display_height = ImGui.GetDisplaySize()
+        display_width, display_height = tonumber(display_width), tonumber(display_height)
+
+        if display_width and display_height and display_width > 0 and display_height > 0 then
+            local min_x = display_width >= window.Width + 16 and 8 or 0
+            local max_x = display_width >= window.Width + 16
+                and display_width - window.Width - 8
+                or math.max(0, display_width - window.Width)
+            local min_y = display_height >= window.Height + 16 and 8 or 0
+            local max_y = display_height >= window.Height + 16
+                and display_height - window.Height - 8
+                or math.max(0, display_height - window.Height)
+            window.X = clamp(next_x, min_x, max_x)
+            window.Y = clamp(next_y, min_y, max_y)
+        else
+            window.X = next_x
+            window.Y = next_y
+        end
+
         ImGui.ResetMouseDragDelta(ImGuiMouseButton.ImGuiMouseButton_Left)
     end
 end
@@ -238,6 +289,9 @@ local function process_sidebar_input(x, y, sidebar_width, height)
         )
 
         if pressed then
+            if item.Id ~= 'settings' then
+                cancel_rebinding(ui)
+            end
             ui.SelectedPage = item.Id
             ui.PreviousPage = nil
         end
@@ -353,6 +407,7 @@ local function draw_header(x, y, width, sidebar_width)
     if settings_pressed then
         local ui = App.Data.State.Ui
         if ui.SelectedPage == "settings" then
+            cancel_rebinding(ui)
             ui.SelectedPage = ui.PreviousPage or "perico"
             ui.PreviousPage = nil
         else
@@ -401,6 +456,7 @@ local function draw_header(x, y, width, sidebar_width)
     )
 
     if hovered and ImGui.IsMouseClicked(ImGuiMouseButton.ImGuiMouseButton_Left, false) then
+        cancel_rebinding(ui)
         ui.Visible = false
     end
 end
@@ -476,6 +532,9 @@ end
 
 function MainWindow.Toggle()
     local ui = App.Data.State.Ui
+    if ui.Visible then
+        cancel_rebinding(ui)
+    end
     ui.Visible = not ui.Visible
 end
 
@@ -483,6 +542,11 @@ function MainWindow.Draw()
     local ui = App.Data.State.Ui
     if not ui.Visible then
         return
+    end
+
+    -- 页面若由其他代码直接切走，也要结束设置页的热键捕获。
+    if ui.SelectedPage ~= 'settings' and ui.RebindingKey then
+        cancel_rebinding(ui)
     end
 
     initialize_window_position()

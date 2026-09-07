@@ -130,7 +130,7 @@ function Asset.RestockWarehouse()
                     ScriptGlobal.SetInt(g.WarehouseRestockAmount, d.Config.WarehouseRestockFillAmount)
                     packed(d.Config.Natives.PACKED_BOOL,
                         d.Config.WarehouseRestockReadyPackedFirst + w.slot, true)
-                    Script.Yield(d.Config.WarehouseRestockDelayMs)
+                    if not c.Yield(d.Config.WarehouseRestockDelayMs) then return end
                 end
             end
         end
@@ -184,7 +184,7 @@ function Asset.QueryWarehouse()
         end
         for index, text in ipairs(lines) do
             c.Toast(string.format("[%d/%d] %s", index, #lines, text), 6000)
-            if index < #lines then Script.Yield(200) end
+            if index < #lines and not c.Yield(200) then return end
         end
     end)
 end
