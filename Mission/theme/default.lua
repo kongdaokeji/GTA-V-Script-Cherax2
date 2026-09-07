@@ -124,9 +124,9 @@ function DefaultTheme.Init(App)
             ResponsiveTwoColumnWidth = 620,
             ResponsiveHysteresis = 20,
             SingleColumnControlsHeight = 470,
-            CursorTextureWidth = 363,
-            CursorTextureHeight = 512,
-            CursorHotspotX = 21,
+            CursorTextureWidth = 160,
+            CursorTextureHeight = 240,
+            CursorHotspotX = 0,
             CursorHotspotY = 0,
             CursorHeight = 26,
             AccentLineWidth = 3
