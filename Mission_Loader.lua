@@ -55,9 +55,48 @@ local APPLICATION_MODULES = {
     { Path = "Mission.lib.runtime",          Name = "Runtime" }
 }
 
-local previous_generation = 0
-if type(MissionApp) == "table" then
-    previous_generation = tonumber(MissionApp.Generation) or 0
+local previous_app = type(MissionApp) == "table" and MissionApp or nil
+local previous_generation = previous_app
+    and (tonumber(previous_app.Generation) or 0) or 0
+
+-- Cherax can execute the loader again without first delivering ON_UNLOAD.
+-- Stop the previous generation before replacing the shared global so two
+-- ON_PRESENT handlers cannot capture or move the same cursor concurrently.
+if previous_app and previous_app.Loader
+    and type(previous_app.Loader.Shutdown) == "function" then
+    local stopped, stop_result = pcall(previous_app.Loader.Shutdown, "reload")
+    if not stopped or stop_result == false then
+        -- A partially failing old loader must not retain cursor ownership while
+        -- the new generation starts.  These are Cherax-specific best-effort
+        -- fallbacks; the generation guard makes any surviving callback inert.
+        pcall(function()
+            local handler = previous_app.Runtime
+                and previous_app.Runtime.PresentHandler
+            if handler and EventMgr and type(EventMgr.RemoveHandler) == "function" then
+                EventMgr.RemoveHandler(handler)
+                previous_app.Runtime.PresentHandler = nil
+            end
+        end)
+        pcall(function()
+            if ImGui and type(ImGui.CaptureMouseFromApp) == "function" then
+                ImGui.CaptureMouseFromApp(false)
+            end
+        end)
+        pcall(function()
+            if ImGui and type(ImGui.SetMouseCursor) == "function"
+                and type(ImGuiMouseCursor) == "table"
+                and type(ImGuiMouseCursor.Arrow) == "number" then
+                ImGui.SetMouseCursor(ImGuiMouseCursor.Arrow)
+            end
+        end)
+        pcall(function()
+            if Logger and type(Logger.LogError) == "function" then
+                Logger.LogError(
+                    "[Mission Assistant Loader] previous generation cleanup failed; cursor fallback applied"
+                )
+            end
+        end)
+    end
 end
 
 -- 所有后续模块只通过该命名空间共享数据和接口，避免增加零散全局变量。
@@ -343,15 +382,28 @@ function App.Loader.Shutdown(reason)
     end
 
     App.Loader.Unloading = true
-    local started_at = Time.GetEpocheMs()
+    App.Runtime.LoaderActive = false
 
-    Logger.LogInfo(
-        string.format(
-            "[%s] 开始卸载清理（触发源：%s）",
-            LOADER_NAME,
-            tostring(reason or "unknown")
+    local unload_handler = App.Runtime.UnloadHandler
+    if unload_handler then
+        pcall(EventMgr.RemoveHandler, unload_handler)
+        App.Runtime.UnloadHandler = nil
+    end
+    local started_at = 0
+    if Time and type(Time.GetEpocheMs) == "function" then
+        local time_ok, value = pcall(Time.GetEpocheMs)
+        if time_ok then started_at = tonumber(value) or 0 end
+    end
+
+    pcall(function()
+        Logger.LogInfo(
+            string.format(
+                "[%s] 开始卸载清理（触发源：%s）",
+                LOADER_NAME,
+                tostring(reason or "unknown")
+            )
         )
-    )
+    end)
 
     for index = #App.Loader.LoadedOrder, 1, -1 do
         local module_name = App.Loader.LoadedOrder[index]
@@ -362,14 +414,16 @@ function App.Loader.Shutdown(reason)
             if type(shutdown) == "function" then
                 local shutdown_ok, shutdown_error = pcall(shutdown, App)
                 if not shutdown_ok then
-                    Logger.LogError(
-                        string.format(
-                            "[%s] 模块 %s 卸载失败：%s",
-                            LOADER_NAME,
-                            tostring(module_name),
-                            tostring(shutdown_error)
+                    pcall(function()
+                        Logger.LogError(
+                            string.format(
+                                "[%s] 模块 %s 卸载失败：%s",
+                                LOADER_NAME,
+                                tostring(module_name),
+                                tostring(shutdown_error)
+                            )
                         )
-                    )
+                    end)
                 end
             end
 
@@ -394,14 +448,21 @@ function App.Loader.Shutdown(reason)
         pcall(collectgarbage, "collect")
     end
 
-    local elapsed = Time.GetEpocheMs() - started_at
-    Logger.LogInfo(
-        string.format(
-            "[%s] 卸载清理完成（%d ms）",
-            LOADER_NAME,
-            elapsed
+    local finished_at = started_at
+    if Time and type(Time.GetEpocheMs) == "function" then
+        local time_ok, value = pcall(Time.GetEpocheMs)
+        if time_ok then finished_at = tonumber(value) or started_at end
+    end
+    local elapsed = math.max(0, finished_at - started_at)
+    pcall(function()
+        Logger.LogInfo(
+            string.format(
+                "[%s] 卸载清理完成（%d ms）",
+                LOADER_NAME,
+                elapsed
+            )
         )
-    )
+    end)
 
     return true
 end
@@ -488,6 +549,10 @@ App.Runtime.UnloadHandler = EventMgr.RegisterHandler(
 )
 
 App.Runtime.UnloadLoop = Script.RegisterLooped(function()
+    if App.Runtime.LoaderActive ~= true or MissionApp ~= App then
+        return false
+    end
+
     if ShouldUnload() then
         App.Loader.Shutdown("ShouldUnload")
         return false
